@@ -14,6 +14,11 @@ catch {
 Write-Host "Downloading toolkit from: $toolkitUrl" -ForegroundColor Cyan
 $scriptContent = Invoke-RestMethod -Uri $toolkitUrl -UseBasicParsing
 
+# Remove UTF-8 BOM if present to avoid hidden-character parse errors in IEX.
+if (-not [string]::IsNullOrEmpty($scriptContent) -and [int][char]$scriptContent[0] -eq 65279) {
+    $scriptContent = $scriptContent.Substring(1)
+}
+
 if ([string]::IsNullOrWhiteSpace($scriptContent)) {
     throw "Toolkit script is empty or failed to download."
 }
