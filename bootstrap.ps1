@@ -1,8 +1,14 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# Pinned release URL for stable installs.
-$toolkitUrl = "https://raw.githubusercontent.com/andrafirmansyah250699-ship-it/IT-Toolkit-by-AndraFM/v2.1.1/ITToolkit.ps1"
+$repoOwner = "andrafirmansyah250699-ship-it"
+$repoName = "IT-Toolkit-by-AndraFM"
+$releaseTag = "v2.1.3"
+
+$zipUrl = "https://github.com/$repoOwner/$repoName/archive/refs/tags/$releaseTag.zip"
+$tempRoot = Join-Path $env:TEMP "ITToolkit-AndraFM"
+$zipPath = Join-Path $tempRoot "$releaseTag.zip"
+$extractRoot = Join-Path $tempRoot $releaseTag
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -11,16 +17,28 @@ catch {
     # Ignore if already on modern TLS.
 }
 
-Write-Host "Downloading toolkit from: $toolkitUrl" -ForegroundColor Cyan
-$scriptContent = Invoke-RestMethod -Uri $toolkitUrl -UseBasicParsing
-
-# Remove UTF-8 BOM if present to avoid hidden-character parse errors in IEX.
-if (-not [string]::IsNullOrEmpty($scriptContent) -and [int][char]$scriptContent[0] -eq 65279) {
-    $scriptContent = $scriptContent.Substring(1)
+if (-not (Test-Path -Path $tempRoot)) {
+    New-Item -Path $tempRoot -ItemType Directory -Force | Out-Null
 }
 
-if ([string]::IsNullOrWhiteSpace($scriptContent)) {
-    throw "Toolkit script is empty or failed to download."
+if (Test-Path -Path $extractRoot) {
+    Remove-Item -Path $extractRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
+
+Write-Host "Downloading toolkit package from: $zipUrl" -ForegroundColor Cyan
+Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
+
+Write-Host "Extracting package..." -ForegroundColor Cyan
+Expand-Archive -Path $zipPath -DestinationPath $extractRoot -Force
+
+$toolkitPath = Get-ChildItem -Path $extractRoot -Recurse -Filter "ITToolkit.ps1" -File |
+    Select-Object -First 1 -ExpandProperty FullName
+
+if ([string]::IsNullOrWhiteSpace($toolkitPath) -or -not (Test-Path -Path $toolkitPath)) {
+    throw "Cannot locate ITToolkit.ps1 after extracting package."
+}
+
+Write-Host "Launching toolkit..." -ForegroundColor Green
+& $toolkitPath
 
 Invoke-Expression $scriptContent
