@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Python artifacts (if any scripts/tools generate them)
+__pycache__/
+*.pyc
+
+# Build outputs and temporary files
+build/
+dist/
+*.log
+*.tmp
