@@ -168,6 +168,8 @@ function New-CategoryPage {
 
     $entries = New-Object System.Collections.ArrayList
     $getCategoryEntriesFn = ${function:Get-CategoryEntries}
+    $addLogFn = ${function:Add-Log}
+    $invokeCategorySelectionFn = ${function:Invoke-CategorySelection}
 
     $page = New-Object System.Windows.Forms.Panel
     $page.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -427,7 +429,7 @@ function New-CategoryPage {
             }
         }
 
-        Add-Log -OutputBox $outputBox -Message "Loaded $($entries.Count) config(s) from $($Category.FolderName)."
+        & $addLogFn -OutputBox $outputBox -Message "Loaded $($entries.Count) config(s) from $($Category.FolderName)."
     }.GetNewClosure()
 
     if ($isMaintenanceCategory) {
@@ -503,7 +505,7 @@ function New-CategoryPage {
             }
         }
 
-        Invoke-CategorySelection -CategoryName $Category.Name -SelectedEntries $selectedEntries -OutputBox $outputBox -StatusLabel $statusLabel
+        & $invokeCategorySelectionFn -CategoryName $Category.Name -SelectedEntries $selectedEntries -OutputBox $outputBox -StatusLabel $statusLabel
     }.GetNewClosure())
 
     & $loadConfigs
