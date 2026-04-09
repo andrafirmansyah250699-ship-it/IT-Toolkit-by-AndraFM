@@ -1,8 +1,8 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# Replace this URL with your public raw GitHub URL.
-$toolkitUrl = "https://raw.githubusercontent.com/your-username/it-toolkit/main/ITToolkit.ps1"
+# Pinned release URL for stable installs.
+$toolkitUrl = "https://raw.githubusercontent.com/andrafirmansyah250699-ship-it/IT-Toolkit-by-AndraFM/v2.1.0/ITToolkit.ps1"
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
