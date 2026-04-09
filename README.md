@@ -33,7 +33,7 @@ Pilihan command instalasi:
 1) Permanent short endpoint (disarankan untuk dibagikan):
 
 ```powershell
-irm "https://raw.githubusercontent.com/andrafirmansyah250699-ship-it/IT-Toolkit-by-AndraFM/main/i.ps1" | iex
+irm "https://raw.githubusercontent.com/andrafirmansyah250699-ship-it/IT-Toolkit-by-AndraFM/master/i.ps1" | iex
 ```
 
 2) Pinned release (stabil, reproducible):
@@ -45,7 +45,7 @@ irm "https://raw.githubusercontent.com/andrafirmansyah250699-ship-it/IT-Toolkit-
 3) Versi singkat dengan variable URL:
 
 ```powershell
-$u = "https://raw.githubusercontent.com/andrafirmansyah250699-ship-it/IT-Toolkit-by-AndraFM/main/i.ps1"
+$u = "https://raw.githubusercontent.com/andrafirmansyah250699-ship-it/IT-Toolkit-by-AndraFM/master/i.ps1"
 irm $u | iex
 ```
 
