@@ -8,7 +8,7 @@ $cacheBust = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
 Write-Host "Using source: branch/$sourceRef" -ForegroundColor Cyan
 
-$zipUrl = "https://codeload.github.com/$repoOwner/$repoName/zip/refs/heads/$sourceRef?bust=$cacheBust"
+$zipUrl = "https://codeload.github.com/$repoOwner/$repoName/zip/refs/heads/${sourceRef}?bust=$cacheBust"
 $tempRoot = Join-Path $env:TEMP "ITToolkit-AndraFM"
 $zipPath = Join-Path $tempRoot "$sourceRef.zip"
 $extractRoot = Join-Path $tempRoot $sourceRef
