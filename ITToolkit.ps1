@@ -493,14 +493,24 @@ function New-CategoryPage {
 
                     $entryToRun = $ctx.Entry
 
-                    if ($entryToRun.RequiresAdmin -and -not (Test-Admin)) {
+                    $isAdminContext = $false
+                    try {
+                        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+                        $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+                        $isAdminContext = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+                    }
+                    catch {
+                        $isAdminContext = $false
+                    }
+
+                    if ($entryToRun.RequiresAdmin -and -not $isAdminContext) {
                         [System.Windows.Forms.MessageBox]::Show(
                             "Aksi '$($entryToRun.Label)' butuh Run as Administrator.",
                             "Need Administrator",
                             [System.Windows.Forms.MessageBoxButtons]::OK,
                             [System.Windows.Forms.MessageBoxIcon]::Warning
                         ) | Out-Null
-                        & $writeLog -Box $ctx.OutputBox -Message "Skipped: $($entryToRun.Label) (need administrator)."
+                        $writeLog.Invoke($ctx.OutputBox, "Skipped: $($entryToRun.Label) (need administrator).")
                         return
                     }
 
@@ -508,20 +518,20 @@ function New-CategoryPage {
                         $ctx.StatusLabel.Text = "Status: Running $($entryToRun.Label)..."
                     }
 
-                    & $writeLog -Box $ctx.OutputBox -Message "$($ctx.Category)/Fixes started: $($entryToRun.Label)"
+                    $writeLog.Invoke($ctx.OutputBox, "$($ctx.Category)/Fixes started: $($entryToRun.Label)")
                     try {
                         $result = & $entryToRun.FilePath -Execute 2>&1 | Out-String
                         if (-not [string]::IsNullOrWhiteSpace($result)) {
                             $result.TrimEnd().Split([Environment]::NewLine) | ForEach-Object {
                                 if (-not [string]::IsNullOrWhiteSpace($_)) {
-                                    & $writeLog -Box $ctx.OutputBox -Message "  $_"
+                                    $writeLog.Invoke($ctx.OutputBox, "  $_")
                                 }
                             }
                         }
-                        & $writeLog -Box $ctx.OutputBox -Message "Done: $($entryToRun.Label)"
+                        $writeLog.Invoke($ctx.OutputBox, "Done: $($entryToRun.Label)")
                     }
                     catch {
-                        & $writeLog -Box $ctx.OutputBox -Message "Failed: $($entryToRun.Label) -> $($_.Exception.Message)"
+                        $writeLog.Invoke($ctx.OutputBox, "Failed: $($entryToRun.Label) -> $($_.Exception.Message)")
                     }
                     finally {
                         if ($null -ne $ctx.StatusLabel) {
