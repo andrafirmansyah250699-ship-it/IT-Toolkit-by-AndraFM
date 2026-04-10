@@ -13,7 +13,7 @@ if (-not $Execute) {
     return $config
 }
 
-$serviceNames = @('MSSQLSERVER', 'SQLBrowser')
+$serviceNames = @('MSSQLSERVER', 'SQLBrowser', 'SQLWriter')
 
 $timeout = New-TimeSpan -Seconds 20
 
@@ -23,6 +23,7 @@ Write-Output '========================='
 Write-Output 'Target services:'
 Write-Output '- MSSQLSERVER'
 Write-Output '- SQLBrowser'
+Write-Output '- SQLWriter'
 
 $foundAny = $false
 
