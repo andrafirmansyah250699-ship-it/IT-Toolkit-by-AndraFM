@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 $repoOwner = "andrafirmansyah250699-ship-it"
 $repoName = "IT-Toolkit-by-AndraFM"
-$releaseTag = "v2.1.8"
+$releaseTag = "v2.1.9"
 
 $zipUrl = "https://github.com/$repoOwner/$repoName/archive/refs/tags/$releaseTag.zip"
 $tempRoot = Join-Path $env:TEMP "ITToolkit-AndraFM"
@@ -39,5 +39,20 @@ if ([string]::IsNullOrWhiteSpace($toolkitPath) -or -not (Test-Path -Path $toolki
 }
 
 Write-Host "Launching toolkit..." -ForegroundColor Green
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
-& $toolkitPath
+try {
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction Stop
+}
+catch {
+    Write-Host "Set-ExecutionPolicy (Process) is blocked. Trying child PowerShell fallback..." -ForegroundColor Yellow
+}
+
+try {
+    & $toolkitPath
+}
+catch [System.Management.Automation.PSSecurityException] {
+    Write-Host "Direct launch blocked by policy, retrying with powershell.exe -ExecutionPolicy Bypass..." -ForegroundColor Yellow
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $toolkitPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Toolkit failed to launch in fallback process. ExitCode=$LASTEXITCODE"
+    }
+}
