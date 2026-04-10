@@ -5,7 +5,7 @@ param(
 
 $config = [pscustomobject]@{
     Id            = 'remove-outlook'
-    Label         = 'Remove Microsoft Outlook (new)'
+    Label         = 'Remove Microsoft Outlook'
     Group         = 'Advanced'
     RequiresAdmin = $true
 }

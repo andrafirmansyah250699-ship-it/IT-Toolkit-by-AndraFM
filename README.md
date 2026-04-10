@@ -4,8 +4,9 @@ Toolkit IT berbasis PowerShell GUI (Windows Forms) dengan arsitektur modular per
 
 ## Features
 
-- GUI kategori: Maintenance, Networking, Security, Update
+- GUI kategori: Maintenance, Config, Security, Update
 - Kategori Maintenance mendukung grouping `Basic` dan `Advanced`
+- Kategori Config memiliki grup `Fixes` (tombol run langsung)
 - Preset `Recommended Selection` (Standart, Minimal, Clear)
 - Loader untuk eksekusi remote via `bootstrap.ps1`
 - Struktur modular: 1 script aksi = 1 file config
@@ -15,7 +16,7 @@ Toolkit IT berbasis PowerShell GUI (Windows Forms) dengan arsitektur modular per
 - `ITToolkit.ps1` -> GUI utama
 - `bootstrap.ps1` -> script loader untuk `irm | iex`
 - `maintenance-configs/*.ps1` -> aksi maintenance
-- `networking-configs/*.ps1` -> aksi networking
+- `config-configs/*.ps1` -> aksi config
 - `security-configs/*.ps1` -> aksi security
 - `update-configs/*.ps1` -> aksi update
 

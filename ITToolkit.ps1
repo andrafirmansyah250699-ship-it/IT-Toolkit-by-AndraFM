@@ -1,7 +1,7 @@
 ﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$Global:ToolkitVersion = "2.1.0"
+$Global:ToolkitVersion = "2.2.0"
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -20,9 +20,9 @@ function Get-CategoryDefinitions {
             FolderName = "maintenance-configs"
         },
         [pscustomobject]@{
-            Name       = "Networking"
-            GroupTitle = "Auto Networking"
-            FolderName = "networking-configs"
+            Name       = "Config"
+            GroupTitle = "Auto Config"
+            FolderName = "config-configs"
         },
         [pscustomobject]@{
             Name       = "Security"
@@ -89,14 +89,43 @@ function Get-CategoryEntries {
 
 function Add-Log {
     param(
-        [Parameter(Mandatory = $true)]
         [System.Windows.Forms.TextBox]$OutputBox,
         [Parameter(Mandatory = $true)]
         [string]$Message
     )
 
     $timestamp = (Get-Date).ToString("HH:mm:ss")
+    if ($null -eq $OutputBox) {
+        Write-Host "[$timestamp] $Message"
+        return
+    }
+
     $OutputBox.AppendText("[$timestamp] $Message$([Environment]::NewLine)")
+}
+
+function Invoke-ToolkitEntry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Entry,
+        [System.Windows.Forms.TextBox]$OutputBox
+    )
+
+    Add-Log -OutputBox $OutputBox -Message "Running: $($Entry.Label)"
+    try {
+        $result = & $Entry.FilePath -Execute 2>&1 | Out-String
+        if (-not [string]::IsNullOrWhiteSpace($result)) {
+            $result.TrimEnd().Split([Environment]::NewLine) | ForEach-Object {
+                if (-not [string]::IsNullOrWhiteSpace($_)) {
+                    Add-Log -OutputBox $OutputBox -Message "  $_"
+                }
+            }
+        }
+
+        Add-Log -OutputBox $OutputBox -Message "Done: $($Entry.Label)"
+    }
+    catch {
+        Add-Log -OutputBox $OutputBox -Message "Failed: $($Entry.Label) -> $($_.Exception.Message)"
+    }
 }
 
 function Invoke-CategorySelection {
@@ -105,9 +134,7 @@ function Invoke-CategorySelection {
         [string]$CategoryName,
         [Parameter(Mandatory = $true)]
         [System.Collections.ArrayList]$SelectedEntries,
-        [Parameter(Mandatory = $true)]
         [System.Windows.Forms.TextBox]$OutputBox,
-        [Parameter(Mandatory = $true)]
         [System.Windows.Forms.Label]$StatusLabel
     )
 
@@ -132,30 +159,19 @@ function Invoke-CategorySelection {
         return
     }
 
-    $StatusLabel.Text = "Status: Running $CategoryName..."
+    if ($null -ne $StatusLabel) {
+        $StatusLabel.Text = "Status: Running $CategoryName..."
+    }
     Add-Log -OutputBox $OutputBox -Message "$CategoryName started."
 
     foreach ($entry in $SelectedEntries) {
-        Add-Log -OutputBox $OutputBox -Message "Running: $($entry.Label)"
-        try {
-            $result = & $entry.FilePath -Execute 2>&1 | Out-String
-            if (-not [string]::IsNullOrWhiteSpace($result)) {
-                $result.TrimEnd().Split([Environment]::NewLine) | ForEach-Object {
-                    if (-not [string]::IsNullOrWhiteSpace($_)) {
-                        Add-Log -OutputBox $OutputBox -Message "  $_"
-                    }
-                }
-            }
-
-            Add-Log -OutputBox $OutputBox -Message "Done: $($entry.Label)"
-        }
-        catch {
-            Add-Log -OutputBox $OutputBox -Message "Failed: $($entry.Label) -> $($_.Exception.Message)"
-        }
+        Invoke-ToolkitEntry -Entry $entry -OutputBox $OutputBox
     }
 
     Add-Log -OutputBox $OutputBox -Message "$CategoryName finished."
-    $StatusLabel.Text = "Status: Idle"
+    if ($null -ne $StatusLabel) {
+        $StatusLabel.Text = "Status: Idle"
+    }
 }
 
 function New-CategoryPage {
@@ -167,9 +183,10 @@ function New-CategoryPage {
     )
 
     $entries = New-Object System.Collections.ArrayList
-    $getCategoryEntriesFn = ${function:Get-CategoryEntries}
-    $addLogFn = ${function:Add-Log}
-    $invokeCategorySelectionFn = ${function:Invoke-CategorySelection}
+    [scriptblock]$getCategoryEntriesFn = ${function:Get-CategoryEntries}
+    [scriptblock]$addLogFn = ${function:Add-Log}
+    [scriptblock]$invokeCategorySelectionFn = ${function:Invoke-CategorySelection}
+    [scriptblock]$invokeToolkitEntryFn = ${function:Invoke-ToolkitEntry}
 
     $page = New-Object System.Windows.Forms.Panel
     $page.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -195,11 +212,14 @@ function New-CategoryPage {
     $basicEntries = New-Object System.Collections.ArrayList
     $advancedEntries = New-Object System.Collections.ArrayList
     $mainEntries = New-Object System.Collections.ArrayList
+    $configFixEntries = New-Object System.Collections.ArrayList
     $checkListBasic = $null
     $checkListAdvanced = $null
     $checkListMain = $null
+    $fixButtonsPanel = $null
 
     $isMaintenanceCategory = ($Category.Name -eq "Maintenance")
+    $isConfigCategory = ($Category.Name -eq "Config")
 
     if ($isMaintenanceCategory) {
         $basicTitle = New-Object System.Windows.Forms.Label
@@ -217,7 +237,11 @@ function New-CategoryPage {
         $checkListBasic.ForeColor = [System.Drawing.Color]::FromArgb(224, 231, 239)
         $checkListBasic.Font = New-Object System.Drawing.Font("Segoe UI", 8.4)
         $checkListBasic.Location = New-Object System.Drawing.Point(18, 40)
-        $checkListBasic.Size = New-Object System.Drawing.Size(430, 120)
+        $checkListBasic.Size = New-Object System.Drawing.Size(430, 106)
+        $checkListBasic.MultiColumn = $true
+        $checkListBasic.ColumnWidth = 208
+        $checkListBasic.IntegralHeight = $false
+        $checkListBasic.ScrollAlwaysVisible = $false
         $groupAuto.Controls.Add($checkListBasic)
         [void]$checkLists.Add($checkListBasic)
 
@@ -239,9 +263,39 @@ function New-CategoryPage {
         $checkListAdvanced.Size = New-Object System.Drawing.Size(430, 186)
         $checkListAdvanced.MultiColumn = $true
         $checkListAdvanced.ColumnWidth = 208
+        $checkListAdvanced.IntegralHeight = $false
         $checkListAdvanced.ScrollAlwaysVisible = $false
         $groupAuto.Controls.Add($checkListAdvanced)
         [void]$checkLists.Add($checkListAdvanced)
+    }
+    elseif ($isConfigCategory) {
+        $fixesHint = New-Object System.Windows.Forms.Label
+        $fixesHint.Text = "Fixes"
+        $fixesHint.Font = New-Object System.Drawing.Font("Segoe UI Semibold", 9.2)
+        $fixesHint.ForeColor = [System.Drawing.Color]::FromArgb(166, 227, 255)
+        $fixesHint.AutoSize = $true
+        $fixesHint.Location = New-Object System.Drawing.Point(18, 140)
+        $groupAuto.Controls.Add($fixesHint)
+
+        $fixButtonsPanel = New-Object System.Windows.Forms.FlowLayoutPanel
+        $fixButtonsPanel.Location = New-Object System.Drawing.Point(18, 162)
+        $fixButtonsPanel.Size = New-Object System.Drawing.Size(430, 92)
+        $fixButtonsPanel.FlowDirection = [System.Windows.Forms.FlowDirection]::LeftToRight
+        $fixButtonsPanel.WrapContents = $true
+        $fixButtonsPanel.AutoScroll = $false
+        $fixButtonsPanel.BackColor = [System.Drawing.Color]::FromArgb(23, 29, 38)
+        $groupAuto.Controls.Add($fixButtonsPanel)
+
+        $checkListMain = New-Object System.Windows.Forms.CheckedListBox
+        $checkListMain.CheckOnClick = $true
+        $checkListMain.BorderStyle = [System.Windows.Forms.BorderStyle]::None
+        $checkListMain.BackColor = [System.Drawing.Color]::FromArgb(23, 29, 38)
+        $checkListMain.ForeColor = [System.Drawing.Color]::FromArgb(224, 231, 239)
+        $checkListMain.Font = New-Object System.Drawing.Font("Segoe UI", 8.8)
+        $checkListMain.Location = New-Object System.Drawing.Point(18, 33)
+        $checkListMain.Size = New-Object System.Drawing.Size(430, 244)
+        $groupAuto.Controls.Add($checkListMain)
+        [void]$checkLists.Add($checkListMain)
     }
     else {
         $checkListMain = New-Object System.Windows.Forms.CheckedListBox
@@ -259,9 +313,7 @@ function New-CategoryPage {
     $btnPresetStandard = $null
     $btnPresetMinimal = $null
     $btnPresetClear = $null
-    $btnSelectAll = $null
-    $btnClear = $null
-    $btnRefresh = $null
+    $btnRun = $null
 
     if ($isMaintenanceCategory) {
         $recommendedLabel = New-Object System.Windows.Forms.Label
@@ -306,40 +358,17 @@ function New-CategoryPage {
         $btnPresetClear.Size = New-Object System.Drawing.Size(130, 24)
         $groupAuto.Controls.Add($btnPresetClear)
     }
-    else {
-        $btnSelectAll = New-Object System.Windows.Forms.Button
-        $btnSelectAll.Text = "Select All"
-        $btnSelectAll.BackColor = [System.Drawing.Color]::FromArgb(34, 71, 98)
-        $btnSelectAll.ForeColor = [System.Drawing.Color]::White
-        $btnSelectAll.FlatStyle = "Flat"
-        $btnSelectAll.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(71, 122, 165)
-        $btnSelectAll.FlatAppearance.BorderSize = 1
-        $btnSelectAll.Location = New-Object System.Drawing.Point(18, 370)
-        $btnSelectAll.Size = New-Object System.Drawing.Size(122, 32)
-        $groupAuto.Controls.Add($btnSelectAll)
-
-        $btnClear = New-Object System.Windows.Forms.Button
-        $btnClear.Text = "Clear"
-        $btnClear.BackColor = [System.Drawing.Color]::FromArgb(34, 71, 98)
-        $btnClear.ForeColor = [System.Drawing.Color]::White
-        $btnClear.FlatStyle = "Flat"
-        $btnClear.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(71, 122, 165)
-        $btnClear.FlatAppearance.BorderSize = 1
-        $btnClear.Location = New-Object System.Drawing.Point(149, 370)
-        $btnClear.Size = New-Object System.Drawing.Size(122, 32)
-        $groupAuto.Controls.Add($btnClear)
-
-        $btnRefresh = New-Object System.Windows.Forms.Button
-        $btnRefresh.Text = "Refresh Config"
-        $btnRefresh.BackColor = [System.Drawing.Color]::FromArgb(34, 71, 98)
-        $btnRefresh.ForeColor = [System.Drawing.Color]::White
-        $btnRefresh.FlatStyle = "Flat"
-        $btnRefresh.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(71, 122, 165)
-        $btnRefresh.FlatAppearance.BorderSize = 1
-        $btnRefresh.Location = New-Object System.Drawing.Point(280, 370)
-        $btnRefresh.Size = New-Object System.Drawing.Size(130, 32)
-        $groupAuto.Controls.Add($btnRefresh)
-    }
+    $btnRun = New-Object System.Windows.Forms.Button
+    $btnRun.Text = "Run Selected $($Category.Name)"
+    $btnRun.BackColor = [System.Drawing.Color]::FromArgb(28, 95, 146)
+    $btnRun.ForeColor = [System.Drawing.Color]::White
+    $btnRun.FlatStyle = "Flat"
+    $btnRun.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(95, 166, 214)
+    $btnRun.FlatAppearance.BorderSize = 1
+    $btnRun.Font = New-Object System.Drawing.Font("Segoe UI Semibold", 10)
+    $btnRun.Location = New-Object System.Drawing.Point(16, 446)
+    $btnRun.Size = New-Object System.Drawing.Size(250, 35)
+    $page.Controls.Add($btnRun)
 
     $groupOutput = New-Object System.Windows.Forms.Panel
     $groupOutput.BackColor = [System.Drawing.Color]::FromArgb(23, 29, 38)
@@ -366,31 +395,25 @@ function New-CategoryPage {
     $outputBox.Size = New-Object System.Drawing.Size(388, 370)
     $groupOutput.Controls.Add($outputBox)
 
-    $btnRun = New-Object System.Windows.Forms.Button
-    $btnRun.Text = "Run Selected $($Category.Name)"
-    $btnRun.BackColor = [System.Drawing.Color]::FromArgb(28, 95, 146)
-    $btnRun.ForeColor = [System.Drawing.Color]::White
-    $btnRun.FlatStyle = "Flat"
-    $btnRun.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(95, 166, 214)
-    $btnRun.FlatAppearance.BorderSize = 1
-    $btnRun.Font = New-Object System.Drawing.Font("Segoe UI Semibold", 10)
-    $btnRun.Location = New-Object System.Drawing.Point(16, 446)
-    $btnRun.Size = New-Object System.Drawing.Size(250, 35)
-    $page.Controls.Add($btnRun)
-
     $statusLabel = New-Object System.Windows.Forms.Label
     $statusLabel.Text = "Status: Idle"
     $statusLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10)
     $statusLabel.ForeColor = [System.Drawing.Color]::FromArgb(163, 176, 192)
     $statusLabel.AutoSize = $true
-    $statusLabel.Location = New-Object System.Drawing.Point(282, 454)
+    $statusLabel.Location = New-Object System.Drawing.Point(16, 454)
     $page.Controls.Add($statusLabel)
 
     $updateFooterLayout = {
         $bottomPadding = 8
-        $btnY = [Math]::Max(0, ($page.ClientSize.Height - $btnRun.Height - $bottomPadding))
-        $btnRun.Location = New-Object System.Drawing.Point(16, $btnY)
-        $statusLabel.Location = New-Object System.Drawing.Point(282, ($btnY + 8))
+        if ($null -ne $btnRun) {
+            $btnY = [Math]::Max(0, ($page.ClientSize.Height - $btnRun.Height - $bottomPadding))
+            $btnRun.Location = New-Object System.Drawing.Point(16, $btnY)
+            $statusLabel.Location = New-Object System.Drawing.Point(282, ($btnY + 8))
+        }
+        else {
+            $statusY = [Math]::Max(0, ($page.ClientSize.Height - $statusLabel.Height - 16))
+            $statusLabel.Location = New-Object System.Drawing.Point(16, $statusY)
+        }
     }.GetNewClosure()
 
     $page.Add_Resize({
@@ -408,6 +431,10 @@ function New-CategoryPage {
         $basicEntries.Clear()
         $advancedEntries.Clear()
         $mainEntries.Clear()
+        $configFixEntries.Clear()
+        if ($null -ne $fixButtonsPanel) {
+            $fixButtonsPanel.Controls.Clear()
+        }
 
         $loaded = & $getCategoryEntriesFn -FolderName $Category.FolderName
         foreach ($entry in $loaded) {
@@ -422,6 +449,44 @@ function New-CategoryPage {
                     [void]$basicEntries.Add($entry)
                     [void]$checkListBasic.Items.Add($entry.Label)
                 }
+            }
+            elseif ($isConfigCategory -and $entry.Group -eq "Fixes") {
+                [void]$configFixEntries.Add($entry)
+                $button = New-Object System.Windows.Forms.Button
+                $button.Text = $entry.Label
+                $button.Width = 208
+                $button.Height = 36
+                $button.Margin = New-Object System.Windows.Forms.Padding(0, 0, 10, 10)
+                $button.BackColor = [System.Drawing.Color]::FromArgb(34, 71, 98)
+                $button.ForeColor = [System.Drawing.Color]::White
+                $button.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+                $button.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(71, 122, 165)
+                $button.FlatAppearance.BorderSize = 1
+                $button.Font = New-Object System.Drawing.Font("Segoe UI Semibold", 9.5)
+                $button.Tag = [pscustomobject]@{
+                    Entry       = $entry
+                    Category    = $Category.Name
+                    OutputBox   = $outputBox
+                    StatusLabel = $statusLabel
+                }
+                $button.Add_Click({
+                    param($sender, $eventArgs)
+
+                    $ctx = $sender.Tag
+                    if ($null -eq $ctx -or $null -eq $ctx.Entry) {
+                        return
+                    }
+
+                    $singleEntry = New-Object System.Collections.ArrayList
+                    [void]$singleEntry.Add($ctx.Entry)
+                    try {
+                        Invoke-CategorySelection -CategoryName "$($ctx.Category)/Fixes" -SelectedEntries $singleEntry -OutputBox $ctx.OutputBox -StatusLabel $ctx.StatusLabel
+                    }
+                    catch {
+                        Add-Log -OutputBox $ctx.OutputBox -Message "Failed: $($ctx.Entry.Label) -> $($_.Exception.Message)"
+                    }
+                }.GetNewClosure())
+                [void]$fixButtonsPanel.Controls.Add($button)
             }
             else {
                 [void]$mainEntries.Add($entry)
@@ -443,8 +508,11 @@ function New-CategoryPage {
 
         $btnPresetMinimal.Add_Click({
             & $clearAllSelections
-            for ($i = 0; $i -lt $checkListBasic.Items.Count; $i++) {
-                $checkListBasic.SetItemChecked($i, $true)
+            $excludeIds = @("disable-hibernation", "disable-telemetry")
+            for ($i = 0; $i -lt $basicEntries.Count; $i++) {
+                if ($excludeIds -notcontains $basicEntries[$i].Id) {
+                    $checkListBasic.SetItemChecked($i, $true)
+                }
             }
         }.GetNewClosure())
 
@@ -466,47 +534,27 @@ function New-CategoryPage {
             & $clearAllSelections
         }.GetNewClosure())
     }
-    else {
-        $btnSelectAll.Add_Click({
-            foreach ($list in $checkLists) {
-                for ($i = 0; $i -lt $list.Items.Count; $i++) {
-                    $list.SetItemChecked($i, $true)
+    if ($null -ne $btnRun) {
+        $btnRun.Add_Click({
+            $selectedEntries = New-Object System.Collections.ArrayList
+
+            if ($isMaintenanceCategory) {
+                foreach ($idx in $checkListBasic.CheckedIndices) {
+                    [void]$selectedEntries.Add($basicEntries[[int]$idx])
+                }
+                foreach ($idx in $checkListAdvanced.CheckedIndices) {
+                    [void]$selectedEntries.Add($advancedEntries[[int]$idx])
                 }
             }
-        }.GetNewClosure())
-
-        $btnClear.Add_Click({
-            foreach ($list in $checkLists) {
-                for ($i = 0; $i -lt $list.Items.Count; $i++) {
-                    $list.SetItemChecked($i, $false)
+            else {
+                foreach ($idx in $checkListMain.CheckedIndices) {
+                    [void]$selectedEntries.Add($mainEntries[[int]$idx])
                 }
             }
-        }.GetNewClosure())
 
-        $btnRefresh.Add_Click({
-            & $loadConfigs
+            & $invokeCategorySelectionFn -CategoryName $Category.Name -SelectedEntries $selectedEntries -OutputBox $outputBox -StatusLabel $statusLabel
         }.GetNewClosure())
     }
-
-    $btnRun.Add_Click({
-        $selectedEntries = New-Object System.Collections.ArrayList
-
-        if ($isMaintenanceCategory) {
-            foreach ($idx in $checkListBasic.CheckedIndices) {
-                [void]$selectedEntries.Add($basicEntries[[int]$idx])
-            }
-            foreach ($idx in $checkListAdvanced.CheckedIndices) {
-                [void]$selectedEntries.Add($advancedEntries[[int]$idx])
-            }
-        }
-        else {
-            foreach ($idx in $checkListMain.CheckedIndices) {
-                [void]$selectedEntries.Add($mainEntries[[int]$idx])
-            }
-        }
-
-        & $invokeCategorySelectionFn -CategoryName $Category.Name -SelectedEntries $selectedEntries -OutputBox $outputBox -StatusLabel $statusLabel
-    }.GetNewClosure())
 
     & $loadConfigs
 

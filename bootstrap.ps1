@@ -42,7 +42,7 @@ Write-Host "Extracting package..." -ForegroundColor Cyan
 Expand-Archive -Path $zipPath -DestinationPath $extractRoot -Force
 
 Write-Host "Cleaning and preparing scripts for execution..." -ForegroundColor Cyan
-$configDirs = @("maintenance-configs", "networking-configs", "security-configs", "update-configs")
+$configDirs = @("maintenance-configs", "config-configs", "security-configs", "update-configs")
 foreach ($configDir in $configDirs) {
     $srcPath = Get-ChildItem -Path $extractRoot -Recurse -Directory -Filter $configDir | Select-Object -First 1 -ExpandProperty FullName
     if ($srcPath) {
