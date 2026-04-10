@@ -1,7 +1,7 @@
 ﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$Global:ToolkitVersion = "2.2.0"
+$Global:ToolkitVersion = "2.2.1"
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
