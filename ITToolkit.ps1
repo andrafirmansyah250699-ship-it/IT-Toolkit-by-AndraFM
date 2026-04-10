@@ -1,7 +1,7 @@
 ﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$Global:ToolkitVersion = "2.2.1"
+$Global:ToolkitVersion = "2.2.2"
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -183,10 +183,6 @@ function New-CategoryPage {
     )
 
     $entries = New-Object System.Collections.ArrayList
-    [scriptblock]$getCategoryEntriesFn = ${function:Get-CategoryEntries}
-    [scriptblock]$addLogFn = ${function:Add-Log}
-    [scriptblock]$invokeCategorySelectionFn = ${function:Invoke-CategorySelection}
-    [scriptblock]$invokeToolkitEntryFn = ${function:Invoke-ToolkitEntry}
 
     $page = New-Object System.Windows.Forms.Panel
     $page.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -417,10 +413,10 @@ function New-CategoryPage {
     }.GetNewClosure()
 
     $page.Add_Resize({
-        & $updateFooterLayout
+        $updateFooterLayout.Invoke()
     }.GetNewClosure())
 
-    & $updateFooterLayout
+    $updateFooterLayout.Invoke()
 
     $loadConfigs = {
         foreach ($list in $checkLists) {
@@ -436,7 +432,7 @@ function New-CategoryPage {
             $fixButtonsPanel.Controls.Clear()
         }
 
-        $loaded = & $getCategoryEntriesFn -FolderName $Category.FolderName
+        $loaded = Get-CategoryEntries -FolderName $Category.FolderName
         foreach ($entry in $loaded) {
             [void]$entries.Add($entry)
 
@@ -483,7 +479,14 @@ function New-CategoryPage {
                         Invoke-CategorySelection -CategoryName "$($ctx.Category)/Fixes" -SelectedEntries $singleEntry -OutputBox $ctx.OutputBox -StatusLabel $ctx.StatusLabel
                     }
                     catch {
-                        & $addLogFn -OutputBox $ctx.OutputBox -Message "Failed: $($ctx.Entry.Label) -> $($_.Exception.Message)"
+                        $timestamp = (Get-Date).ToString("HH:mm:ss")
+                        $message = "[$timestamp] Failed: $($ctx.Entry.Label) -> $($_.Exception.Message)"
+                        if ($null -ne $ctx.OutputBox) {
+                            $ctx.OutputBox.AppendText("$message$([Environment]::NewLine)")
+                        }
+                        else {
+                            Write-Host $message
+                        }
                     }
                 }.GetNewClosure())
                 [void]$fixButtonsPanel.Controls.Add($button)
@@ -494,7 +497,7 @@ function New-CategoryPage {
             }
         }
 
-        & $addLogFn -OutputBox $outputBox -Message "Loaded $($entries.Count) config(s) from $($Category.FolderName)."
+        Add-Log -OutputBox $outputBox -Message "Loaded $($entries.Count) config(s) from $($Category.FolderName)."
     }.GetNewClosure()
 
     if ($isMaintenanceCategory) {
@@ -507,7 +510,7 @@ function New-CategoryPage {
         }.GetNewClosure()
 
         $btnPresetMinimal.Add_Click({
-            & $clearAllSelections
+            $clearAllSelections.Invoke()
             $excludeIds = @("disable-hibernation", "disable-telemetry")
             for ($i = 0; $i -lt $basicEntries.Count; $i++) {
                 if ($excludeIds -notcontains $basicEntries[$i].Id) {
@@ -517,7 +520,7 @@ function New-CategoryPage {
         }.GetNewClosure())
 
         $btnPresetStandard.Add_Click({
-            & $clearAllSelections
+            $clearAllSelections.Invoke()
             for ($i = 0; $i -lt $checkListBasic.Items.Count; $i++) {
                 $checkListBasic.SetItemChecked($i, $true)
             }
@@ -531,7 +534,7 @@ function New-CategoryPage {
         }.GetNewClosure())
 
         $btnPresetClear.Add_Click({
-            & $clearAllSelections
+            $clearAllSelections.Invoke()
         }.GetNewClosure())
     }
     if ($null -ne $btnRun) {
@@ -552,11 +555,11 @@ function New-CategoryPage {
                 }
             }
 
-            & $invokeCategorySelectionFn -CategoryName $Category.Name -SelectedEntries $selectedEntries -OutputBox $outputBox -StatusLabel $statusLabel
+            Invoke-CategorySelection -CategoryName $Category.Name -SelectedEntries $selectedEntries -OutputBox $outputBox -StatusLabel $statusLabel
         }.GetNewClosure())
     }
 
-    & $loadConfigs
+    $loadConfigs.Invoke()
 
     return [pscustomobject]@{
         Name = $Category.Name
@@ -711,12 +714,12 @@ function Show-ToolkitGui {
     foreach ($button in $navButtons) {
         $button.Add_Click({
             param($sourceButton, $clickArgs)
-            & $setActiveCategory $sourceButton.Tag
+            $setActiveCategory.Invoke($sourceButton.Tag)
         }.GetNewClosure())
     }
 
     if ($categories.Count -gt 0) {
-        & $setActiveCategory $categories[0].Name
+        $setActiveCategory.Invoke($categories[0].Name)
     }
 
     $form.Add_Shown({ $form.Activate() })

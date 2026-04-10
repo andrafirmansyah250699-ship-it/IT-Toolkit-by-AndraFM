@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 $repoOwner = "andrafirmansyah250699-ship-it"
 $repoName = "IT-Toolkit-by-AndraFM"
-$releaseTag = "v2.2.1"
+$releaseTag = "v2.2.2"
 
 $latestReleaseUrl = "https://api.github.com/repos/$repoOwner/$repoName/releases/latest"
 try {
