@@ -5,6 +5,19 @@ $repoOwner = "andrafirmansyah250699-ship-it"
 $repoName = "IT-Toolkit-by-AndraFM"
 $releaseTag = "v2.2.1"
 
+$latestReleaseUrl = "https://api.github.com/repos/$repoOwner/$repoName/releases/latest"
+try {
+    $latest = Invoke-RestMethod -Uri $latestReleaseUrl -UseBasicParsing -Headers @{ "User-Agent" = "ITToolkit-Bootstrap" }
+    if ($null -ne $latest -and -not [string]::IsNullOrWhiteSpace([string]$latest.tag_name)) {
+        $releaseTag = [string]$latest.tag_name
+    }
+}
+catch {
+    # Fallback to default releaseTag when GitHub API is unavailable.
+}
+
+Write-Host "Using release tag: $releaseTag" -ForegroundColor Cyan
+
 $zipUrl = "https://github.com/$repoOwner/$repoName/archive/refs/tags/$releaseTag.zip"
 $tempRoot = Join-Path $env:TEMP "ITToolkit-AndraFM"
 $zipPath = Join-Path $tempRoot "$releaseTag.zip"
