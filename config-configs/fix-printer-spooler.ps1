@@ -18,6 +18,13 @@ $spoolPath = Join-Path $env:SystemRoot 'System32\spool\PRINTERS'
 Write-Output '==============================='
 Write-Output 'FIX PRINTER SPOOLER'
 Write-Output '==============================='
+ 
+$spooler = Get-Service -Name spooler -ErrorAction SilentlyContinue
+if ($null -eq $spooler) {
+    Write-Output 'Service Spooler tidak ditemukan di device ini. Skip.'
+    return
+}
+
 Write-Output '[1] Stop Printer Spooler...'
 Stop-Service -Name spooler -Force -ErrorAction SilentlyContinue
 
@@ -29,6 +36,12 @@ if (Test-Path -Path $spoolPath) {
 }
 
 Write-Output '[3] Start Printer Spooler...'
-Start-Service -Name spooler -ErrorAction Stop
+try {
+    Start-Service -Name spooler -ErrorAction Stop
+}
+catch {
+    Write-Output "Gagal start Spooler: $($_.Exception.Message)"
+    return
+}
 
 Write-Output 'Selesai! Printer sudah di-refresh.'
