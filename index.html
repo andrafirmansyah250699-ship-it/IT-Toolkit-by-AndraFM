@@ -3,120 +3,188 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IT Toolkit by AndraFM | PowerShell Automation Tool</title>
+<title>IT Toolkit by AndraFM</title>
 
-<meta name="description" content="PowerShell IT Toolkit for Windows automation, maintenance, config, security, and update tools by AndraFM.">
-<meta name="keywords" content="PowerShell toolkit, Windows automation, IT tools, system admin, script automation">
-<meta name="author" content="AndraFM">
+<meta name="description" content="PowerShell IT Toolkit for Windows automation and system administration by AndraFM.">
 
 <style>
 body {
   margin:0;
-  font-family: Arial;
-  background:#0a0f1a;
-  color:#e6edf3;
+  font-family: 'Segoe UI', sans-serif;
+  background:black;
+  color:#d1d5db;
+  overflow-x:hidden;
+}
+
+/* MATRIX BACKGROUND */
+canvas {
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-1;
+}
+
+/* CENTER WRAPPER */
+.container {
+  max-width:700px;
+  margin:80px auto;
+  padding:20px;
   text-align:center;
 }
 
-/* Glow title */
+/* TITLE */
 h1 {
-  font-size:48px;
-  color:#00e5ff;
-  text-shadow:0 0 10px #00e5ff,0 0 20px #00e5ff;
-  margin-top:50px;
+  font-size:52px;
+  color:#00f5ff;
+  text-shadow:0 0 10px #00f5ff,0 0 25px #00f5ff;
+  letter-spacing:3px;
 }
 
 h2 {
-  color:#ffd700;
+  color:#ffcc00;
   margin-top:-10px;
 }
 
-/* card */
-.box {
-  background:#111827;
-  border:1px solid #1f2937;
+/* CARD (lebih kecil & elegant) */
+.card {
+  background:rgba(17,17,17,0.85);
+  border:1px solid rgba(0,255,255,0.2);
+  border-radius:14px;
   padding:20px;
-  margin:20px auto;
-  width:80%;
-  border-radius:12px;
-  box-shadow:0 0 15px rgba(0,255,255,0.1);
+  margin-top:25px;
+  box-shadow:0 0 20px rgba(0,255,255,0.1);
 }
 
-/* button */
+/* COMMAND BOX */
+.code {
+  background:#0a0a0a;
+  padding:12px;
+  border-radius:10px;
+  color:#00ffcc;
+  font-size:13px;
+  word-break:break-all;
+  border:1px solid #1f2937;
+}
+
+/* COPY BUTTON (lebih keren) */
 button {
-  background:#00e5ff;
-  border:none;
+  margin-top:12px;
   padding:12px 18px;
-  margin-top:10px;
-  border-radius:8px;
-  cursor:pointer;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(90deg,#00f5ff,#00ff88);
+  color:black;
   font-weight:bold;
+  cursor:pointer;
+  transition:0.3s;
+  box-shadow:0 0 10px rgba(0,255,255,0.4);
 }
 
 button:hover {
-  background:#00bcd4;
+  transform:scale(1.05);
+  box-shadow:0 0 20px rgba(0,255,255,0.7);
 }
 
-/* code box */
-.code {
-  background:#0f172a;
-  padding:12px;
-  border-radius:8px;
+/* STATUS COPY */
+#status {
   margin-top:10px;
-  color:#00ffcc;
-  word-break:break-all;
+  font-size:12px;
+  color:#00ff88;
+  opacity:0;
+  transition:0.3s;
 }
 
-/* step list */
-.step {
+/* STEPS */
+.steps {
   text-align:left;
-  max-width:700px;
-  margin:auto;
+  font-size:14px;
   line-height:1.8;
+  color:#9ca3af;
 }
 </style>
 </head>
 
 <body>
 
-<h1>IT TOOLKIT</h1>
-<h2>by AndraFM_</h2>
+<canvas id="matrix"></canvas>
 
-<div class="box">
-  <h3>⚡ Quick Install (Click to Copy)</h3>
+<div class="container">
 
-  <div class="code" id="cmd">
+  <h1>TOOLKIT</h1>
+  <h2>by Andra FM_</h2>
+
+  <div class="card">
+    <h3>⚡ Install Command</h3>
+
+    <div class="code" id="cmd">
 irm https://raw.githubusercontent.com/andrafm/IT-Toolkit-by-AndraFM/master/i.ps1 | iex
+    </div>
+
+    <button onclick="copyCmd()">📋 Copy Command</button>
+    <div id="status">Copied to clipboard ✓</div>
   </div>
 
-  <button onclick="copyCmd()">📋 Copy Command</button>
-</div>
-
-<div class="box">
-  <h3>🧠 Cara Menjalankan (WAJIB)</h3>
-
-  <div class="step">
-    1. Tekan <b>Windows</b> → ketik <b>PowerShell</b><br>
-    2. Klik kanan → <b>Run as Administrator</b><br>
-    3. Paste command di atas<br>
-    4. Tekan Enter<br>
+  <div class="card">
+    <h3>🧠 How to Run</h3>
+    <div class="steps">
+      1. Press <b>Windows</b> → search <b>PowerShell</b><br>
+      2. Right click → <b>Run as Administrator</b><br>
+      3. Paste command<br>
+      4. Press Enter<br>
+    </div>
   </div>
-</div>
 
-<div class="box">
-  <h3>✨ Features</h3>
-  ✔ GUI Tools Windows<br>
-  ✔ Maintenance Automation<br>
-  ✔ Security & Config Tools<br>
-  ✔ Lightweight & Fast<br>
 </div>
 
 <script>
 function copyCmd() {
   const text = document.getElementById("cmd").innerText;
   navigator.clipboard.writeText(text);
-  alert("Command copied!");
+
+  const status = document.getElementById("status");
+  status.style.opacity = 1;
+
+  setTimeout(() => {
+    status.style.opacity = 0;
+  }, 1500);
 }
+
+/* MATRIX EFFECT */
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+
+canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
+
+let letters = "01";
+letters = letters.split("");
+
+let fontSize = 14;
+let columns = canvas.width / fontSize;
+
+let drops = [];
+for (let x = 0; x < columns; x++)
+  drops[x] = 1;
+
+function draw() {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#00ff88";
+  ctx.font = fontSize + "px monospace";
+
+  for (let i = 0; i < drops.length; i++) {
+    let text = letters[Math.floor(Math.random() * letters.length)];
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
+      drops[i] = 0;
+
+    drops[i]++;
+  }
+}
+
+setInterval(draw, 35);
 </script>
 
 </body>
