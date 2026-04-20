@@ -1,123 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PowerShell IT Toolkit by AndraFM | Windows Automation Tool</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Toolkit by AndraFM | PowerShell Automation Tool</title>
 
-  <!-- SEO -->
-  <meta name="description" content="PowerShell GUI IT Toolkit for Windows automation, maintenance, configuration, security, and update scripts. Lightweight system admin tool by AndraFM." />
-  <meta name="keywords" content="PowerShell toolkit, Windows automation, IT tools, system admin script, GUI PowerShell, automation tool Windows" />
-  <meta name="author" content="AndraFM" />
+<meta name="description" content="PowerShell IT Toolkit for Windows automation, maintenance, config, security, and update tools by AndraFM.">
+<meta name="keywords" content="PowerShell toolkit, Windows automation, IT tools, system admin, script automation">
+<meta name="author" content="AndraFM">
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="PowerShell IT Toolkit by AndraFM" />
-  <meta property="og:description" content="Windows automation toolkit with GUI for IT admin, maintenance, security, and configuration tasks." />
-  <meta property="og:type" content="website" />
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background:#0a0f1a;
+  color:#e6edf3;
+  text-align:center;
+}
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
-      text-align: center;
-    }
+/* Glow title */
+h1 {
+  font-size:48px;
+  color:#00e5ff;
+  text-shadow:0 0 10px #00e5ff,0 0 20px #00e5ff;
+  margin-top:50px;
+}
 
-    .container {
-      padding: 80px 20px;
-      max-width: 900px;
-      margin: auto;
-    }
+h2 {
+  color:#ffd700;
+  margin-top:-10px;
+}
 
-    h1 {
-      font-size: 42px;
-      color: #00d9ff;
-    }
+/* card */
+.box {
+  background:#111827;
+  border:1px solid #1f2937;
+  padding:20px;
+  margin:20px auto;
+  width:80%;
+  border-radius:12px;
+  box-shadow:0 0 15px rgba(0,255,255,0.1);
+}
 
-    h2 {
-      color: #ffd700;
-      margin-top: 10px;
-    }
+/* button */
+button {
+  background:#00e5ff;
+  border:none;
+  padding:12px 18px;
+  margin-top:10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
 
-    p {
-      font-size: 18px;
-      color: #c9d1d9;
-      line-height: 1.6;
-    }
+button:hover {
+  background:#00bcd4;
+}
 
-    .box {
-      margin-top: 30px;
-      padding: 20px;
-      border: 1px solid #30363d;
-      border-radius: 10px;
-      background: #161b22;
-    }
+/* code box */
+.code {
+  background:#0f172a;
+  padding:12px;
+  border-radius:8px;
+  margin-top:10px;
+  color:#00ffcc;
+  word-break:break-all;
+}
 
-    .btn {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 12px 20px;
-      background: #238636;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-    }
-
-    .btn:hover {
-      background: #2ea043;
-    }
-
-    code {
-      background: #21262d;
-      padding: 10px;
-      display: block;
-      border-radius: 8px;
-      margin-top: 10px;
-      color: #00ffcc;
-    }
-  </style>
+/* step list */
+.step {
+  text-align:left;
+  max-width:700px;
+  margin:auto;
+  line-height:1.8;
+}
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<h1>IT TOOLKIT</h1>
+<h2>by AndraFM_</h2>
 
-  <h1>IT TOOLKIT</h1>
-  <h2>by Andra FM</h2>
+<div class="box">
+  <h3>⚡ Quick Install (Click to Copy)</h3>
 
-  <p>
-    PowerShell GUI Toolkit for Windows automation, system maintenance, configuration, security, and update management.
-  </p>
-
-  <div class="box">
-    <h3>⚡ Quick Install</h3>
-    <code>irm https://raw.githubusercontent.com/andrafm/IT-Toolkit-by-AndraFM/master/i.ps1 | iex</code>
+  <div class="code" id="cmd">
+irm https://raw.githubusercontent.com/andrafm/IT-Toolkit-by-AndraFM/master/i.ps1 | iex
   </div>
 
-  <div class="box">
-    <h3>✨ Features</h3>
-    <p>
-      ✔ GUI-based IT tools<br/>
-      ✔ Modular script system<br/>
-      ✔ Maintenance & security automation<br/>
-      ✔ Lightweight & fast execution
-    </p>
-  </div>
-
-  <div class="box">
-    <h3>📦 Use Case</h3>
-    <p>
-      IT Admin • System Engineer • Helpdesk • Automation scripting • Windows maintenance
-    </p>
-  </div>
-
-  <a class="btn" href="https://github.com/andrafm/IT-Toolkit-by-AndraFM">
-    View Source on GitHub
-  </a>
-
+  <button onclick="copyCmd()">📋 Copy Command</button>
 </div>
+
+<div class="box">
+  <h3>🧠 Cara Menjalankan (WAJIB)</h3>
+
+  <div class="step">
+    1. Tekan <b>Windows</b> → ketik <b>PowerShell</b><br>
+    2. Klik kanan → <b>Run as Administrator</b><br>
+    3. Paste command di atas<br>
+    4. Tekan Enter<br>
+  </div>
+</div>
+
+<div class="box">
+  <h3>✨ Features</h3>
+  ✔ GUI Tools Windows<br>
+  ✔ Maintenance Automation<br>
+  ✔ Security & Config Tools<br>
+  ✔ Lightweight & Fast<br>
+</div>
+
+<script>
+function copyCmd() {
+  const text = document.getElementById("cmd").innerText;
+  navigator.clipboard.writeText(text);
+  alert("Command copied!");
+}
+</script>
 
 </body>
 </html>
