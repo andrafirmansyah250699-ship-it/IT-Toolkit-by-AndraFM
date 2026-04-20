@@ -1,100 +1,141 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$repoOwner = "andrafirmansyah250699-ship-it"
-$repoName = "IT-Toolkit-by-AndraFM"
+# =========================
+# SILENT MODE FLAG
+# =========================
+$SilentMode = $true
+
+function Log($msg, $color = "Cyan") {
+    if (-not $SilentMode) {
+        Write-Host $msg -ForegroundColor $color
+    }
+}
+
+# =========================
+# CONFIG
+# =========================
+$repoOwner = "andrafm"
+$repoName  = "IT-Toolkit-by-AndraFM"
 $sourceRef = "master"
 $cacheBust = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
-Write-Host "Using source: branch/$sourceRef" -ForegroundColor Cyan
-
 $zipUrl = "https://codeload.github.com/$repoOwner/$repoName/zip/refs/heads/${sourceRef}?bust=$cacheBust"
-$tempRoot = Join-Path $env:TEMP "ITToolkit-AndraFM"
-$zipPath = Join-Path $tempRoot "$sourceRef.zip"
+
+$tempRoot    = Join-Path $env:TEMP "ITToolkit-AndraFM"
+$zipPath     = Join-Path $tempRoot "$sourceRef.zip"
 $extractRoot = Join-Path $tempRoot $sourceRef
 
+# =========================
+# TLS
+# =========================
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-}
-catch {
-    # Ignore if already on modern TLS.
+} catch {}
+
+# =========================
+# PROGRESS FUNCTION (SINGLE LINE)
+# =========================
+function Show-Status {
+    param([string]$text)
+
+    if ($SilentMode) { return }
+
+    Write-Host ("{0}..." -f $text) -ForegroundColor Cyan
 }
 
-if (-not (Test-Path -Path $tempRoot)) {
+# =========================
+# PREP TEMP
+# =========================
+if (-not (Test-Path $tempRoot)) {
     New-Item -Path $tempRoot -ItemType Directory -Force | Out-Null
 }
 
-Write-Host "Cleaning up old extracted versions..." -ForegroundColor Cyan
+# =========================
+# CLEAN OLD
+# =========================
+Show-Status "Cleaning old files"
+
 Get-ChildItem -Path $tempRoot -Directory -ErrorAction SilentlyContinue | Where-Object {
     $_.Name -eq "master" -or $_.Name -like "v*"
 } | ForEach-Object {
-    try {
-        Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    catch {
-        # Silently continue if cleanup fails
-    }
+    Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-if (Test-Path -Path $extractRoot) {
-    Remove-Item -Path $extractRoot -Recurse -Force -ErrorAction SilentlyContinue
+if (Test-Path $extractRoot) {
+    Remove-Item $extractRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host "Downloading toolkit package from: $zipUrl" -ForegroundColor Cyan
+# =========================
+# DOWNLOAD
+# =========================
+Show-Status "Downloading toolkit"
+
 Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
 
-Write-Host "Extracting package..." -ForegroundColor Cyan
+# =========================
+# EXTRACT
+# =========================
+Show-Status "Extracting package"
+
 Expand-Archive -Path $zipPath -DestinationPath $extractRoot -Force
 
-Write-Host "Cleaning and preparing scripts for execution..." -ForegroundColor Cyan
+# =========================
+# CLEAN SCRIPTS
+# =========================
+Show-Status "Preparing scripts"
+
 $configDirs = @("maintenance-configs", "config-configs", "security-configs", "update-configs")
+
 foreach ($configDir in $configDirs) {
-    $srcPath = Get-ChildItem -Path $extractRoot -Recurse -Directory -Filter $configDir | Select-Object -First 1 -ExpandProperty FullName
+    $srcPath = Get-ChildItem -Path $extractRoot -Recurse -Directory -Filter $configDir -ErrorAction SilentlyContinue |
+        Select-Object -First 1 -ExpandProperty FullName
+
     if ($srcPath) {
-        Get-ChildItem -Path $srcPath -Filter "*.ps1" | ForEach-Object {
-            $content = Get-Content -Path $_.FullName -Raw -Encoding UTF8
-            Set-Content -Path $_.FullName -Value $content -Encoding UTF8 -Force
-            try {
-                Unblock-File -Path $_.FullName -Confirm:$false -ErrorAction SilentlyContinue
-            }
-            catch {
-                # Silently continue
-            }
+        Get-ChildItem -Path $srcPath -Filter "*.ps1" -ErrorAction SilentlyContinue | ForEach-Object {
+            $content = Get-Content $_.FullName -Raw -Encoding UTF8
+            Set-Content $_.FullName -Value $content -Encoding UTF8 -Force
+            try { Unblock-File $_.FullName -ErrorAction SilentlyContinue } catch {}
         }
     }
 }
 
-Get-ChildItem -Path $extractRoot -Recurse -Filter "*.ps1" | ForEach-Object {
-    try {
-        Unblock-File -Path $_.FullName -Confirm:$false -ErrorAction SilentlyContinue
-    }
-    catch {
-        # Silently continue if unblock fails
-    }
+Get-ChildItem -Path $extractRoot -Recurse -Filter "*.ps1" -ErrorAction SilentlyContinue | ForEach-Object {
+    try { Unblock-File $_.FullName -ErrorAction SilentlyContinue } catch {}
 }
 
-$toolkitPath = Get-ChildItem -Path $extractRoot -Recurse -Filter "ITToolkit.ps1" -File |
+# =========================
+# FIND MAIN SCRIPT
+# =========================
+$toolkitPath = Get-ChildItem -Path $extractRoot -Recurse -Filter "ITToolkit.ps1" -File -ErrorAction SilentlyContinue |
     Select-Object -First 1 -ExpandProperty FullName
 
-if ([string]::IsNullOrWhiteSpace($toolkitPath) -or -not (Test-Path -Path $toolkitPath)) {
+if (-not $toolkitPath) {
     throw "Cannot locate ITToolkit.ps1 after extracting package."
 }
 
-Write-Host "Launching toolkit..." -ForegroundColor Green
+# =========================
+# FINAL STATUS
+# =========================
+if (-not $SilentMode) {
+    Write-Host ""
+    Write-Host "[████████████████████] 100% Ready!" -ForegroundColor Cyan
+    Write-Host ""
+}
+
+# =========================
+# LAUNCH
+# =========================
 try {
-    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction Stop
-}
-catch {
-    Write-Host "Set-ExecutionPolicy (Process) is blocked. Trying child PowerShell fallback..." -ForegroundColor Yellow
-}
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction SilentlyContinue
+} catch {}
 
 try {
     & $toolkitPath
 }
 catch [System.Management.Automation.PSSecurityException] {
-    Write-Host "Direct launch blocked by policy, retrying with powershell.exe -ExecutionPolicy Bypass..." -ForegroundColor Yellow
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $toolkitPath
     if ($LASTEXITCODE -ne 0) {
-        throw "Toolkit failed to launch in fallback process. ExitCode=$LASTEXITCODE"
+        throw "Toolkit failed to launch. ExitCode=$LASTEXITCODE"
     }
 }
