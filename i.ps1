@@ -25,9 +25,61 @@ catch {
     # Ignore if already on modern TLS.
 }
 
-Write-Host "Downloading bootstrap from: $bootstrapUrl" -ForegroundColor Cyan
-$response = Invoke-WebRequest -Uri $bootstrapUrl -UseBasicParsing
-$content = [string]$response.Content
+Clear-Host
+
+function Type-Text {
+    param (
+        [string]$text,
+        [int]$delay = 40,
+        [string]$color = "White"
+    )
+    foreach ($char in $text.ToCharArray()) {
+        Write-Host $char -NoNewline -ForegroundColor $color
+        Start-Sleep -Milliseconds $delay
+    }
+    Write-Host ""
+}
+
+# Top line
+Write-Host ("=" * 32) -ForegroundColor DarkGray
+Write-Host ""
+
+# Typing Title
+Type-Text "        TOOLKIT" 35 "Cyan"
+Write-Host ""
+
+Type-Text "           by" 25 "DarkGray"
+Type-Text "        Andra FM" 35 "Yellow"
+
+Write-Host ""
+Write-Host ("=" * 32) -ForegroundColor DarkGray
+Write-Host ""
+
+# Progress Bar Simulation
+$steps = @(
+    "Initializing...",
+    "Loading modules...",
+    "Preparing environment...",
+    "Starting toolkit..."
+)
+
+foreach ($step in $steps) {
+    Write-Host ""
+    Write-Host $step -ForegroundColor Green
+
+    for ($i = 0; $i -le 100; $i += 10) {
+        $bar = ("█" * ($i / 10)).PadRight(10, "-")
+        Write-Host ("[{0}] {1}%" -f $bar, $i) -NoNewline -ForegroundColor Cyan
+        Start-Sleep -Milliseconds 120
+        Write-Host "`r" -NoNewline
+    }
+
+    Write-Host "[██████████] 100%" -ForegroundColor Cyan
+}
+
+Write-Host ""
+Write-Host "✔ Toolkit Ready!" -ForegroundColor Yellow
+Start-Sleep -Milliseconds 500
 
 if ($content.Length -gt 0 -and $content[0] -eq [char]0xFEFF) {
     $content = $content.Substring(1)
